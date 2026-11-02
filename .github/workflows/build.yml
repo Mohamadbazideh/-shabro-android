@@ -1,4 +1,4 @@
-name: Build Shabro APK
+name: Shabro Build APK
 
 on:
   workflow_dispatch:
@@ -22,16 +22,20 @@ jobs:
 
       - name: آماده‌سازی Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platform-tools
+            platforms;android-35
+            build-tools;35.0.0
 
       - name: ساخت APK
         run: |
-          unzip -q پروژه_اندروید_شبرو.zip -d project
-          cd project
+          unzip -q پروژه_اندروید_شبرو.zip
           chmod +x gradlew
           ./gradlew assembleDebug
 
-      - name: ذخیره فایل نصب
+      - name: ذخیره فایل APK
         uses: actions/upload-artifact@v4
         with:
           name: Shabro-APK
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
