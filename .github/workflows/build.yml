@@ -1,3 +1,4 @@
+
 name: Shabro Build APK
 
 on:
@@ -9,7 +10,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: دریافت پروژه
         uses: actions/checkout@v4
@@ -20,13 +20,20 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: آماده‌سازی اندروید
-        uses: android-actions/setup-android@v3
-
-      - name: نصب ابزارهای اندروید
+      - name: آماده‌سازی ابزارهای اندروید
+        shell: bash
         run: |
-          yes | sdkmanager --licenses
-          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+          set -e
+          SDK_ROOT="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          export ANDROID_HOME="$SDK_ROOT"
+          export ANDROID_SDK_ROOT="$SDK_ROOT"
+          SDKMANAGER="$(find "$SDK_ROOT/cmdline-tools" -type f -name sdkmanager 2>/dev/null | sort | tail -n 1)"
+          if [ -z "$SDKMANAGER" ]; then
+            echo "ابزار sdkmanager پیدا نشد"
+            exit 1
+          fi
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: آماده‌سازی Gradle
         uses: gradle/actions/setup-gradle@v4
@@ -34,19 +41,28 @@ jobs:
           gradle-version: '8.9'
 
       - name: ساخت برنامه
+        shell: bash
         run: |
-          ZIP_FILE=$(find . -maxdepth 1 -name '*.zip' | head -n 1)
+          set -e
+          ZIP_FILE="$(find . -maxdepth 1 -type f -name '*.zip' -print -quit)"
           if [ -z "$ZIP_FILE" ]; then
             echo "فایل ZIP پروژه پیدا نشد"
             exit 1
           fi
-          mkdir project
-          unzip -q "$ZIP_FILE" -d project
-          cd project
-          gradle assembleDebug
+          mkdir -p project
+          unzip -oq "$ZIP_FILE" -d project
+          GRADLE_DIR="$(find "$PWD/project" -type f \( -name settings.gradle -o -name settings.gradle.kts \) -print -quit | xargs -r dirname)"
+          if [ -z "$GRADLE_DIR" ]; then
+            echo "فایل تنظیمات Gradle پیدا نشد"
+            find project -maxdepth 5 -type f
+            exit 1
+          fi
+          gradle -p "$GRADLE_DIR" assembleDebug
 
       - name: ذخیره فایل نصب
         uses: actions/upload-artifact@v4
         with:
           name: Shabro-APK
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          path: project/**/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          
