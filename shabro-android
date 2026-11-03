@@ -1,0 +1,185 @@
+package ir.shabro.app
+
+import android.app.Activity
+import android.os.Bundle
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.View
+import android.widget.*
+
+class MainActivity : Activity() {
+
+    private val black = Color.rgb(8, 9, 12)
+    private val gold = Color.rgb(245, 184, 46)
+    private val white = Color.WHITE
+    private val cardColor = Color.rgb(25, 26, 31)
+
+    private lateinit var layout: LinearLayout
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.statusBarColor = black
+        window.navigationBarColor = black
+        home()
+    }
+
+    private fun background(color: Int, radius: Float = 20f) =
+        GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = radius * resources.displayMetrics.density
+            setStroke(1, gold)
+        }
+
+    private fun label(
+        value: String,
+        size: Float,
+        color: Int = white
+    ) = TextView(this).apply {
+        text = value
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER
+        textDirection = View.TEXT_DIRECTION_RTL
+        setPadding(12, 14, 12, 14)
+    }
+
+    private fun base(title: String) {
+        val scroll = ScrollView(this)
+
+        layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(18, 20, 18, 25)
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setBackgroundColor(black)
+        }
+
+        scroll.addView(layout)
+        setContentView(scroll)
+
+        layout.addView(label("شب‌رو", 32f, gold))
+        layout.addView(label(title, 19f))
+    }
+
+    private fun button(
+        title: String,
+        action: () -> Unit
+    ) {
+        val b = label(title, 17f, black)
+        b.setTypeface(null, Typeface.BOLD)
+        b.background = background(gold)
+        b.setOnClickListener { action() }
+
+        val params = LinearLayout.LayoutParams(-1, -2)
+        params.setMargins(0, 8, 0, 8)
+        layout.addView(b, params)
+    }
+
+    private fun card(title: String, detail: String) {
+        val box = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = background(cardColor)
+            setPadding(12, 8, 12, 8)
+        }
+
+        box.addView(label(title, 19f, gold))
+        box.addView(label(detail, 14f))
+
+        val params = LinearLayout.LayoutParams(-1, -2)
+        params.setMargins(0, 8, 0, 8)
+        layout.addView(box, params)
+    }
+
+    private fun home() {
+        base("سفر امن، در هر زمان، در سراسر ایران")
+
+        card("📍 انتخاب مسیر", "مبدأ و مقصد خود را انتخاب کنید")
+
+        button("🚘 درخواست سفر") {
+            trip()
+        }
+
+        button("📦 ارسال بار و بسته") {
+            trip()
+        }
+
+        button("پنل راننده") {
+            driver()
+        }
+
+        button("پنل مدیریت") {
+            admin()
+        }
+
+        card(
+            "خدمات شب‌رو",
+            "سفر شهری و بین‌شهری • حمل بار • ارسال بسته"
+        )
+    }
+
+    private fun trip() {
+        base("ثبت درخواست")
+
+        val origin = EditText(this).apply {
+            hint = "مبدأ"
+            setTextColor(white)
+            setHintTextColor(Color.GRAY)
+            background = background(cardColor)
+            textDirection = View.TEXT_DIRECTION_RTL
+        }
+
+        val destination = EditText(this).apply {
+            hint = "مقصد"
+            setTextColor(white)
+            setHintTextColor(Color.GRAY)
+            background = background(cardColor)
+            textDirection = View.TEXT_DIRECTION_RTL
+        }
+
+        layout.addView(origin)
+        layout.addView(destination)
+
+        button("ثبت درخواست آزمایشی") {
+            Toast.makeText(
+                this,
+                "درخواست نمایشی ثبت شد",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+
+        button("بازگشت") { home() }
+    }
+
+    private fun driver() {
+        base("پنل راننده")
+
+        card("وضعیت راننده", "آماده دریافت سفر")
+        card("درخواست‌ها", "پس از اتصال سرور نمایش داده می‌شوند")
+        card("درآمد", "گزارش درآمد راننده")
+
+        button("بازگشت") { home() }
+    }
+
+    private fun admin() {
+        base("مدیریت شب‌رو")
+
+        card(
+            "کمیسیون پلتفرم",
+            "۵ درصد از هر سفارش"
+        )
+
+        card(
+            "مدیریت تعرفه‌ها",
+            "تنظیم قیمت سفر و حمل بار"
+        )
+
+        card(
+            "مدیریت کاربران",
+            "مسافران و رانندگان"
+        )
+
+        button("بازگشت") { home() }
+    }
+}
