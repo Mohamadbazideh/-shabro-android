@@ -1,0 +1,420 @@
+
+package ir.shabro.app
+
+import android.app.Activity
+import android.os.Bundle
+import android.graphics.*
+import android.graphics.drawable.GradientDrawable
+import android.view.Gravity
+import android.view.View
+import android.widget.*
+
+class MainActivity : Activity() {
+
+    private val gold = Color.rgb(245, 190, 66)
+    private val black = Color.rgb(7, 9, 12)
+    private val panel = Color.rgb(23, 25, 29)
+    private val white = Color.rgb(245, 238, 220)
+    private val gray = Color.rgb(170, 165, 150)
+
+    private lateinit var page: LinearLayout
+
+    private fun dp(n: Int) = (n * resources.displayMetrics.density).toInt()
+
+    private fun bg(color: Int, radius: Int = 16): GradientDrawable {
+        return GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = dp(radius).toFloat()
+            setStroke(dp(1), Color.rgb(105, 78, 34))
+        }
+    }
+
+    private fun txt(
+        value: String,
+        size: Float = 16f,
+        color: Int = white,
+        bold: Boolean = false
+    ) = TextView(this).apply {
+        text = value
+        textSize = size
+        setTextColor(color)
+        gravity = Gravity.CENTER
+        textDirection = View.TEXT_DIRECTION_RTL
+        if (bold) setTypeface(null, Typeface.BOLD)
+        setPadding(dp(8), dp(8), dp(8), dp(8))
+    }
+
+    private fun gap(n: Int) {
+        page.addView(View(this), LinearLayout.LayoutParams(1, dp(n)))
+    }
+
+    private fun button(
+        title: String,
+        action: () -> Unit,
+        primary: Boolean = false
+    ) = txt(title, 15f, if (primary) black else gold, true).apply {
+        background = bg(if (primary) gold else panel)
+        setPadding(dp(12), dp(15), dp(12), dp(15))
+        setOnClickListener { action() }
+    }
+
+    private fun startPage(title: String) {
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(black)
+        }
+
+        val scroll = ScrollView(this)
+        page = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+            setPadding(dp(15), dp(10), dp(15), dp(18))
+        }
+
+        scroll.addView(page)
+        root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(bottomBar())
+        setContentView(root)
+
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+        }
+
+        header.addView(txt("☾", 42f, gold, true),
+            LinearLayout.LayoutParams(dp(65), dp(65)))
+
+        header.addView(txt(title, 28f, gold, true),
+            LinearLayout.LayoutParams(0, dp(65), 1f))
+
+        page.addView(header)
+    }
+
+    private fun bottomBar() = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER
+        setBackgroundColor(Color.rgb(15, 16, 19))
+
+        listOf("⌂\nخانه", "▣\nسفارش‌ها", "▤\nکیف پول", "●\nپروفایل")
+            .forEachIndexed { i, item ->
+                val v = txt(item, 12f, if (i == 0) gold else gray, true)
+                addView(v, LinearLayout.LayoutParams(0, dp(58), 1f))
+                v.setOnClickListener {
+                    when (i) {
+                        0 -> home()
+                        1 -> orders()
+                        2 -> wallet()
+                        3 -> profile()
+                    }
+                }
+            }
+    }
+
+    private fun heading(value: String) {
+        page.addView(txt(value, 19f, gold, true).apply {
+            gravity = Gravity.RIGHT
+        })
+    }
+
+    private fun home() {
+        startPage("شب‌رو")
+
+        page.addView(txt(
+            "سفر امن، در هر زمان، در سراسر ایران",
+            14f, gray
+        ))
+
+        gap(12)
+
+        // نقشه گرافیکی
+        val map = FrameLayout(this).apply {
+            background = bg(Color.rgb(222, 228, 216), 20)
+            clipToOutline = true
+        }
+
+        map.addView(MapView(this),
+            FrameLayout.LayoutParams(-1, dp(225)))
+
+        val locations = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            background = bg(Color.rgb(12, 13, 16), 14)
+            setPadding(dp(10), dp(5), dp(10), dp(5))
+        }
+
+        locations.addView(txt("🔵  مبدأ را انتخاب کنید", 14f))
+        locations.addView(txt("📍  مقصد را انتخاب کنید", 14f))
+
+        map.addView(locations,
+            FrameLayout.LayoutParams(-1, -2, Gravity.BOTTOM).apply {
+                setMargins(dp(10), 0, dp(10), dp(10))
+            })
+
+        page.addView(map, LinearLayout.LayoutParams(-1, dp(245)))
+
+        gap(15)
+
+        // دو کارت خدمات
+        val services = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutDirection = View.LAYOUT_DIRECTION_RTL
+        }
+
+        services.addView(
+            service("🚘", "درخواست سفر") { booking("درخواست سفر") },
+            LinearLayout.LayoutParams(0, dp(120), 1f).apply {
+                marginEnd = dp(5)
+            }
+        )
+
+        services.addView(
+            service("📦", "ارسال بار و بسته") {
+                booking("ارسال بار و بسته")
+            },
+            LinearLayout.LayoutParams(0, dp(120), 1f).apply {
+                marginStart = dp(5)
+            }
+        )
+
+        page.addView(services)
+        gap(15)
+
+        // بنر مشکی و طلایی
+        val banner = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            background = bg(Color.rgb(39, 29, 14), 18)
+            setPadding(dp(8), dp(12), dp(8), dp(12))
+        }
+
+        banner.addView(txt("🚘", 43f, gold),
+            LinearLayout.LayoutParams(dp(90), dp(85)))
+
+        banner.addView(
+            LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                addView(txt("شب‌رو", 24f, gold, true))
+                addView(txt("همیشه در کنار شماست", 13f))
+            },
+            LinearLayout.LayoutParams(0, -2, 1f)
+        )
+
+        page.addView(banner)
+        gap(15)
+
+        val features = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = bg(panel, 16)
+        }
+
+        listOf(
+            "🛡\nامنیت بالا",
+            "🎧\nپشتیبانی",
+            "⚡\nسفارش سریع",
+            "📍\nپوشش سراسری"
+        ).forEach {
+            features.addView(txt(it, 11f, gold, true),
+                LinearLayout.LayoutParams(0, dp(72), 1f))
+        }
+
+        page.addView(features)
+        gap(15)
+
+        page.addView(button("پنل راننده", { driver() }))
+        gap(8)
+        page.addView(button("مدیریت سامانه", { admin() }))
+    }
+
+    private fun service(
+        icon: String,
+        title: String,
+        action: () -> Unit
+    ) = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        background = bg(Color.rgb(12, 13, 17), 18)
+        elevation = dp(4).toFloat()
+        addView(txt(icon, 39f, gold))
+        addView(txt(title, 13f, white, true))
+        setOnClickListener { action() }
+    }
+
+    private class MapView(context: android.content.Context) : View(context) {
+        private val road = Paint(3).apply {
+            color = Color.WHITE
+            strokeWidth = 11f
+            style = Paint.Style.STROKE
+        }
+
+        private val mainRoad = Paint(3).apply {
+            color = Color.rgb(244, 190, 75)
+            strokeWidth = 13f
+            style = Paint.Style.STROKE
+        }
+
+        private val route = Paint(3).apply {
+            color = Color.rgb(35, 112, 220)
+            strokeWidth = 7f
+            style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
+        }
+
+        override fun onDraw(c: Canvas) {
+            super.onDraw(c)
+            c.drawColor(Color.rgb(222, 228, 216))
+
+            val w = width.toFloat()
+            val h = height.toFloat()
+
+            for (i in 0..8) {
+                val x = w * i / 8f
+                c.drawLine(x, 0f, x + w * .13f, h, road)
+                val y = h * i / 8f
+                c.drawLine(0f, y, w, y - h * .08f, road)
+            }
+
+            val highway = Path().apply {
+                moveTo(0f, h * .2f)
+                lineTo(w * .45f, h * .42f)
+                lineTo(w, h * .25f)
+            }
+            c.drawPath(highway, mainRoad)
+
+            val path = Path().apply {
+                moveTo(w * .22f, h * .76f)
+                lineTo(w * .43f, h * .61f)
+                lineTo(w * .64f, h * .44f)
+                lineTo(w * .8f, h * .2f)
+            }
+            c.drawPath(path, route)
+
+            c.drawCircle(w * .22f, h * .76f, 10f,
+                Paint(3).apply { color = Color.rgb(35, 112, 220) })
+
+            c.drawCircle(w * .8f, h * .2f, 9f,
+                Paint(3).apply { color = Color.RED })
+        }
+    }
+
+    private fun booking(kind: String) {
+        startPage(kind)
+        heading("ثبت درخواست جدید")
+        gap(10)
+
+        listOf(
+            "نام و شماره تماس",
+            "شهر یا نشانی مبدأ",
+            "شهر یا نشانی مقصد",
+            "زمان سفر",
+            "توضیحات"
+        ).forEach { hint ->
+            val input = EditText(this).apply {
+                this.hint = hint
+                setHintTextColor(gray)
+                setTextColor(white)
+                textSize = 15f
+                gravity = Gravity.RIGHT or Gravity.CENTER_VERTICAL
+                textDirection = View.TEXT_DIRECTION_RTL
+                background = bg(panel, 14)
+                setPadding(dp(14), 0, dp(14), 0)
+            }
+
+            page.addView(input,
+                LinearLayout.LayoutParams(-1, dp(58)).apply {
+                    bottomMargin = dp(12)
+                })
+        }
+
+        page.addView(button("محاسبه کرایه", {
+            Toast.makeText(this, "محاسبه آنلاین هنوز فعال نیست",
+                Toast.LENGTH_LONG).show()
+        }, true))
+
+        gap(12)
+        page.addView(button("بازگشت به خانه", { home() }))
+    }
+
+    private fun driver() {
+        startPage("پنل راننده")
+        heading("سلام، راننده عزیز")
+        gap(12)
+
+        page.addView(txt("🟢  وضعیت راننده: آنلاین", 17f, gold, true))
+        gap(10)
+
+        page.addView(txt("۲۸\nتعداد سفرها", 21f, gold, true)
+            .apply { background = bg(panel) })
+
+        gap(10)
+
+        page.addView(txt("۲٬۴۵۰٬۰۰۰ تومان\nدرآمد امروز",
+            19f, gold, true).apply { background = bg(panel) })
+
+        gap(15)
+        page.addView(button("نمایش درخواست‌های سفر", {
+            Toast.makeText(this, "اتصال آنلاین فعال نیست",
+                Toast.LENGTH_SHORT).show()
+        }))
+        gap(10)
+        page.addView(button("مدیریت سامانه", { admin() }))
+        gap(10)
+        page.addView(button("خانه", { home() }))
+    }
+
+    private fun admin() {
+        startPage("مدیریت شب‌رو")
+        heading("تنظیمات مدیریت")
+        gap(12)
+
+        page.addView(txt("۵٪\nکمیسیون پلتفرم", 25f, gold, true)
+            .apply { background = bg(panel) })
+
+        listOf(
+            "تعرفه‌ها و قیمت‌گذاری",
+            "مدیریت کاربران",
+            "گزارش‌گیری و آمار",
+            "تنظیمات پیشرفته"
+        ).forEach {
+            gap(10)
+            page.addView(txt("⚙   $it", 16f, white, true).apply {
+                background = bg(panel)
+                gravity = Gravity.RIGHT
+            })
+        }
+
+        gap(15)
+        page.addView(button("بازگشت به خانه", { home() }))
+    }
+
+    private fun orders() {
+        startPage("سفارش‌ها")
+        heading("سفارش‌های من")
+        gap(20)
+        page.addView(txt("هنوز سفارشی ثبت نشده است", 16f, gray))
+        gap(15)
+        page.addView(button("ثبت درخواست سفر", { booking("درخواست سفر") }))
+    }
+
+    private fun wallet() {
+        startPage("کیف پول")
+        heading("کیف پول شب‌رو")
+        gap(15)
+        page.addView(txt("موجودی کیف پول\n۰ تومان", 22f, gold, true)
+            .apply { background = bg(panel) })
+    }
+
+    private fun profile() {
+        startPage("پروفایل")
+        heading("حساب کاربری")
+        gap(15)
+        page.addView(button("پنل راننده", { driver() }))
+        gap(10)
+        page.addView(button("مدیریت", { admin() }))
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        window.statusBarColor = black
+        window.navigationBarColor = black
+        home()
+    }
+}
